@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Calendrier de l'Avent 🎄</title>
+<style>
+body {
+  background:#1d2435;
+  color:#fff;
+  font-family:sans-serif;
+  text-align:center;
+  padding:20px;
+  overflow-x:hidden;
+}
+h1 { margin-bottom: 20px; }
+
+/* --- Grille des jours --- */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(90px,1fr));
+  gap:10px;
+  max-width:700px;
+  margin:auto;
+}
+
+/* --- Cases du calendrier --- */
+.day {
+  position:relative;
+  background:linear-gradient(145deg,#2f3b5f,#364974);
+  border-radius:10px;
+  padding:20px;
+  cursor:pointer;
+  transition:transform 0.3s, box-shadow 0.3s;
+  font-size:1.4em;
+  font-weight:bold;
+  text-shadow:0 0 6px rgba(255,255,255,0.4);
+  overflow:hidden;
+}
+.day:hover {
+  transform:scale(1.05);
+  box-shadow:0 0 15px rgba(255,255,255,0.4);
+}
+.locked {
+  opacity:0.3;
+  cursor:not-allowed;
+}
+
+/* --- Décorations sur les cases --- */
+.decoration {
+  position:absolute;
+  font-size:1.2em;
+  opacity:0.9;
+}
+.top-left { top:6px; left:6px; }
+.top-right { top:6px; right:6px; }
+.bottom-left { bottom:6px; left:6px; }
+.bottom-right { bottom:6px; right:6px; }
+
+/* --- Effet "volet qui s’ouvre" --- */
+.day::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  transform-origin:left;
+  transform:rotateY(0deg);
+  transition:transform 0.8s ease;
+  border-radius:10px;
+}
+.day.opened::before {
+  transform:rotateY(-100deg);
+}
+
+/* --- Modal --- */
+.modal {
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,0.85);
+  z-index:10;
+  padding:20px;
+}
+.modal.open { display:flex; }
+
+.close {
+  position:absolute;
+  top:20px;
+  right:20px;
+  background:#e67e22;
+  border:0;
+  color:white;
+  padding:8px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+  z-index:11;
+}
+
+/* --- Contenu du modal --- */
+.modal-content {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:15px;
+  max-width:90vw;
+  animation:fadeIn 0.6s ease;
+}
+.modal img {
+  max-width:90vw;
+  max-height:75vh;
+  border-radius:12px;
+  box-shadow:0 0 30px rgba(255,255,255,0.4);
+}
+.comment-card {
+  background:linear-gradient(135deg,#fff5cc,#fef9e7);
+  color:#5a3e1b;
+  border:3px solid gold;
+  border-radius:15px;
+  padding:15px 20px;
+  box-shadow:0 0 25px rgba(255,215,0,0.4);
+  font-family:Georgia,serif;
+  font-size:1.05em;
+  max-width:600px;
+}
+
+/* --- Animations --- */
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(20px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* --- Effet de neige --- */
+.snowflake {
+  position:fixed;
+  top:-10px;
+  color:white;
+  font-size:1em;
+  opacity:0.8;
+  animation:fall linear forwards;
+  z-index:5;
+  pointer-events:none;
+}
+@keyframes fall {
+  to { transform:translateY(110vh); opacity:0.2; }
+}
+</style>
+</head>
+<body>
+<h1>🎁 Calendrier de l'Avent 🎄</h1>
+
+<div class="grid" id="grid"></div>
+
+<div class="modal" id="modal">
+  <button class="close" id="close">Fermer</button>
+  <div class="modal-content" id="modalContent">
+    <div id="commentContainer" class="comment-card"></div>
+    <img id="image" src="" alt="">
+  </div>
+</div>
+
+<script>
+const images = {
+  1: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour01.jpg",
+  2: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour02.jpg",
+3: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour03.jpg",
+4: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour04.jpg",
+5: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour05.jpg",
+6: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour06.jpg",
+7: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour07.jpg",
+8: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour08.jpg",
+9: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour09.jpg",
+10: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour10.jpg",
+11: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour11.jpg",
+12: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour12.jpg",
+13: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour13.jpg",
+14: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour14.jpg",
+15: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour15.jpg",
+16: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour16.jpg",
+17: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour17.jpg",
+18: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour18.jpg",
+19: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour19.jpg",
+20: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour20.jpg",
+21: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour21.jpg",
+22: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour22.jpg",
+23: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour23.jpg",
+24: "https://filedn.eu/lppr0FiJJmYpCPxz2O8YCdX/photo/jour24.jpg"};
+
+const comments = {
+  1: "🎅 Jour 1 : 30/04/2024 - Ronda",
+  2: "🎄 Jour 2 : 11/04/2025 - Cirque de Gavarnie",
+3: "⭐ Jour 3 : 03/07/2024 - Minorque ",
+4: "❄️ Jour 4 : 21/01/2024 - Andernos",
+5: "🕯️ Jour 5 : 02/07/2024 - Minorque",
+6: "🧦 Jour 6 : 23/09/2025 - Paros",
+7: "🦌 Jour 7 : 17/09/2024 - Bretagne",
+8: "🎀 Jour 8 : 04/07/2024 - Minorque",
+9: "🎁 Jour 9 : 30/04/2024 - Parking de l'aéroport de Séville ",
+10: "✨ Jour 10 : 11/04/2025 - Gavarnie (quelque part dans une avalanche)",
+11: "🎅 Jour 11 : 13/01/2024 - Pauillac",
+12: "🎄 Jour 12 : 24/09/2025 - Antiparos",
+13: "⭐ Jour 13 : 30/04/2024 - Ronda",
+14: "❄️ Jour 14 : 05/08/2025 - Au pays",
+15: "🕯️ Jour 15 : 27/04/2024 - Séville ",
+16: "🧦 Jour 16 : 22/08/2025 - Dordogne",
+17: "🦌 Jour 17 : 04/07/2024 - Minorque ",
+18: "🎀 Jour 18 : 10/04/2025 - Lac de Gaube",
+19: "🎁 Jour 19 : 04/07/2024 - Minorque (farniente et ceviche) ",
+20: "✨ Jour 20 : 30/09/2025 - Naxos ",
+21: "🎅 Jour 21 : 27/04/2024 - Séville ",
+22: "🎄 Jour 22 : 24/09/2025 - Paros",
+23: "⭐ Jour 23 : 02/07/2024 - Minorque",
+24: "❄️ Jour 24 : 03/07/2024 - Minorque"
+};
+
+const decorations = ["🎄","🎁","⭐","❄️","🕯️","🧦","🦌","🎀","🎅","🧝‍♂️","🍪","🎂","✨","🌟","🕯️","🌲"];
+
+const today = 24;
+const grid = document.getElementById('grid');
+const modal = document.getElementById('modal');
+const image = document.getElementById('image');
+const close = document.getElementById('close');
+const commentContainer = document.getElementById('commentContainer');
+
+// Génération des cases
+for (let i = 1; i <= 24; i++) {
+  const day = document.createElement('div');
+  day.className = 'day';
+  day.textContent = i;
+
+  const decoPositions = ['top-left','top-right','bottom-left','bottom-right'];
+  decoPositions.forEach(pos=>{
+    const deco = document.createElement('div');
+    deco.className = 'decoration ' + pos;
+    deco.textContent = decorations[Math.floor(Math.random()*decorations.length)];
+    day.appendChild(deco);
+  });
+
+  const locked = i > today;
+  if (locked) day.classList.add('locked');
+  day.onclick = () => { if (!locked) openDay(i, day); };
+  grid.appendChild(day);
+}
+
+function openDay(i, day) {
+  if (images[i]) {
+    // effet "volet"
+    day.classList.add('opened');
+    image.src = images[i];
+    commentContainer.textContent = comments[i] || "Une belle surprise t’attend...";
+    modal.classList.add('open');
+  } else {
+    alert("Image du jour non trouvée !");
+  }
+}
+
+close.onclick = () => modal.classList.remove('open');
+modal.onclick = e => { if (e.target === modal) modal.classList.remove('open'); };
+
+// ❄️ neige
+function createSnowflake() {
+  const snowflake = document.createElement('div');
+  snowflake.classList.add('snowflake');
+  snowflake.textContent = '❄️';
+  snowflake.style.left = Math.random() * 100 + 'vw';
+  snowflake.style.fontSize = Math.random() * 10 + 10 + 'px';
+  snowflake.style.animationDuration = 5 + Math.random() * 5 + 's';
+  document.body.appendChild(snowflake);
+  setTimeout(() => snowflake.remove(), 10000);
+}
+setInterval(createSnowflake, 250);
+</script>
+</body>
+</html>
